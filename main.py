@@ -45,8 +45,6 @@ def main():
 
     print_help()
 
-
-    fps = 10
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

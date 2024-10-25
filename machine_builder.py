@@ -77,7 +77,7 @@ class MachineBuilder:
         print("\nNew Machine", name)
         for state, action in states.items():
             print('('+state[0]+','+state[1]+','+str(action)+')')
-        print("________________\n")
+        print("\n")
 
 def random_action():
         random_colour = random.choice(['y','g'])
