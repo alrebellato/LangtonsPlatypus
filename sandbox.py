@@ -2,6 +2,9 @@ from enum import Enum
 import random
 import pygame
 
+from action import Action
+from machine import Machine
+
 BOARD_WIDTH = 21
 BOARD_HEIGHT = 21
 BOARD_CENTER = (BOARD_WIDTH // 2, BOARD_HEIGHT // 2)
@@ -13,61 +16,11 @@ class RGB(Enum):
   RED = (255, 0, 0)
   BLUE = (80, 80, 255)
 
-# Machines will have a list of state:action pairs.
-class Action:
-  def __init__(self, colour, animal, tree):
-    self.next_colour = colour
-    self.next_animal = animal
-    self.tree = tree
-
-  def __str__(self):
-    return f"{self.next_colour},{self.next_animal},{self.tree}"
-
 def random_action():
     random_colour = random.choice(['y','g'])
     random_animal = random.choice(['k', 'e', 'w', 'p'])
     random_tree = random.choice(['gg', 'wa'])
     return Action(random_colour, random_animal, random_tree)
-
-# Apply rotation to direction based on the tree
-def rotate(dir, tree):
-    if tree == 'gg':
-        return (-dir[1], dir[0])
-    else:
-        return (dir[1], -dir[0])
-
-class Machine:
-    def __init__(self, states, colour=RGB.RED):
-        self.x = BOARD_CENTER[0] # All machines start at center.
-        self.y = BOARD_CENTER[1]
-        self.animal = 'k' # All machines start as kangaroo
-        self.colour = colour
-        self.dir = (0, -1)
-        self.states = states
-
-    # This needs to be adapted for platypus's as initial configuation.
-    def act(self, grid):
-        """Act according to genetics, current tile colour, and animal."""
-        state = (grid[self.x][self.y], self.animal)
-        if state in self.states:
-            action = self.states[state]
-            self.animal = action.next_animal
-            grid[self.x][self.y] = action.next_colour
-            self.dir = rotate(self.dir, action.tree)
-            self.move(grid)
-            return True
-        else:
-            if self.animal == 'p':
-                if grid[self.x][self.y] == 'g':
-                    print("Green Platypus. Machine terminating")
-            return False
-
-    def move(self, grid):
-        self.x += self.dir[0]
-        self.y += self.dir[1]
-
-        self.x %= len(grid)
-        self.y %= len(grid[0])
 
 def random_machine():
     states = {
@@ -80,11 +33,13 @@ def random_machine():
         ('y','p'):random_action(),
     }
     
+    print("\nNew Machine___")
     for state, action in states.items():
         print('('+state[0]+','+state[1]+','+str(action)+')')
+    print("________________\n")
 
     random_colour = (random.randint(0, 100), random.randint(0, 100), random.randint(0, 100))
-    return Machine(states, random_colour)
+    return Machine(BOARD_CENTER[0], BOARD_CENTER[1], states, random_colour)
 
 def draw_square(screen, x, y, colour):
   if isinstance(colour, RGB):
@@ -98,6 +53,15 @@ def draw_text(screen, x, y, text, colour):
     text = font.render(text, True, colour)
     screen.blit(text, (x * CELL_PX + 4, y * CELL_PX))
 
+def print_help():
+    print("\n__________________________________")
+    print("Press SPACE to add another machine")
+    print("Press C to clear the grid")
+    print('Press K to remove all machines')
+    print("Press + to speed up the game and - to slow it down")
+    print("Press h to read this again")
+    print("__________________________________\n")
+    
 def main():
     """The main function of the game"""
     pygame.init()
@@ -110,10 +74,7 @@ def main():
 
     running = True
 
-    print("Press SPACE to add another machine")
-    print("Press C to clear the grid")
-    print('Press K to remove all machines')
-    print("Press + to speed up the game and - to slow it down")
+    print_help()
 
 
     fps = 10
@@ -134,6 +95,8 @@ def main():
                 elif event.key == pygame.K_MINUS:
                     if fps > 3:
                         fps = min(int(0.8 * fps), fps - 1)
+                elif event.key == pygame.K_h:
+                    print_help()
         for m in machines:
             alive = m.act(grid)
             if not alive:
