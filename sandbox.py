@@ -1,20 +1,10 @@
-from enum import Enum
+import argparse
 import random
 import pygame
 
 from action import Action
 from machine import Machine
-
-BOARD_WIDTH = 21
-BOARD_HEIGHT = 21
-BOARD_CENTER = (BOARD_WIDTH // 2, BOARD_HEIGHT // 2)
-CELL_PX = 24
-
-class RGB(Enum):
-  YELLOW = (220, 200, 0)
-  GREEN = (0, 150, 0)
-  RED = (255, 0, 0)
-  BLUE = (80, 80, 255)
+from renderer import RGB, Renderer
 
 def random_action():
     random_colour = random.choice(['y','g'])
@@ -22,7 +12,7 @@ def random_action():
     random_tree = random.choice(['gg', 'wa'])
     return Action(random_colour, random_animal, random_tree)
 
-def random_machine():
+def random_machine(board_width: int):
     states = {
         ('y','k'):random_action(),
         ('g','k'):random_action(),
@@ -39,19 +29,7 @@ def random_machine():
     print("________________\n")
 
     random_colour = (random.randint(0, 100), random.randint(0, 100), random.randint(0, 100))
-    return Machine(BOARD_CENTER[0], BOARD_CENTER[1], states, random_colour)
-
-def draw_square(screen, x, y, colour):
-  if isinstance(colour, RGB):
-    colour = colour.value
-  pygame.draw.rect(screen, colour, (x * CELL_PX, y * CELL_PX, CELL_PX, CELL_PX))
-
-def draw_text(screen, x, y, text, colour):
-    font = pygame.font.SysFont("Arial", 24)
-    if isinstance(colour, RGB):
-      colour = colour.value
-    text = font.render(text, True, colour)
-    screen.blit(text, (x * CELL_PX + 4, y * CELL_PX))
+    return Machine(board_width // 2, board_width // 2, states, random_colour)
 
 def print_help():
     print("\n__________________________________")
@@ -63,14 +41,25 @@ def print_help():
     print("__________________________________\n")
     
 def main():
-    """The main function of the game"""
+    parser = argparse.ArgumentParser(description="Langton's Platypus Simulation")
+    parser.add_argument('--fps', type=int, default=10, help='Frames per second')
+    parser.add_argument('--width', type=int, default=21, help='Canvas width in cells')
+    parser.add_argument('--cell_size', type=int, default=8, help='Cell size in pixels')
+    args = parser.parse_args()
+
+    board_width = args.width
+    fps = args.fps
+    cell_px = args.cell_size
+
+    renderer = Renderer(cell_px, board_width)
+
     pygame.init()
     pygame.display.set_caption("Langton's Platypus")
-    screen = pygame.display.set_mode((BOARD_WIDTH * CELL_PX, BOARD_HEIGHT * CELL_PX))
+    screen = pygame.display.set_mode((board_width * cell_px, board_width * cell_px))
     clock = pygame.time.Clock()
 
-    grid = [['y' for _ in range(BOARD_HEIGHT)] for _ in range(BOARD_WIDTH)]
-    machines = [random_machine()]
+    grid = [['y' for _ in range(board_width)] for _ in range(board_width)]
+    machines = [random_machine(board_width)]
 
     running = True
 
@@ -84,10 +73,10 @@ def main():
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    machines.append(random_machine())
+                    machines.append(random_machine(board_width))
                 elif event.key == pygame.K_c:
                     print("clearing")
-                    grid = [['y' for _ in range(BOARD_HEIGHT)] for _ in range(BOARD_WIDTH)]
+                    grid = [['y' for _ in range(board_width)] for _ in range(board_width)]
                 elif event.key == pygame.K_k:
                     machines = []
                 elif event.key == pygame.K_EQUALS:
@@ -104,14 +93,13 @@ def main():
 
         screen.fill(RGB.YELLOW.value)
         for x, y in [(x, y) for x in range(len(grid)) for y in range(len(grid[0])) if grid[x][y] == 'g']:
-            draw_square(screen, x, y, RGB.GREEN)
+            renderer.draw_square(screen, x, y, RGB.GREEN)
 
         for m in machines:
-            draw_text(screen, m.x, m.y, m.animal, m.colour)
+            renderer.draw_text(screen, m.x, m.y, m.animal, m.colour)
 
         pygame.display.flip()
         clock.tick(fps)
-
     pygame.quit()
 
 
