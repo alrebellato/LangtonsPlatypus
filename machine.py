@@ -1,5 +1,6 @@
 class Machine:
-    def __init__(self, x, y, states, colour):
+    def __init__(self, name, x, y, states, colour):
+        self.name = name
         self.x = x
         self.y = y
         self.animal = 'k' # All machines start as kangaroo
@@ -21,7 +22,7 @@ class Machine:
         else:
             if self.animal == 'p':
                 if grid[self.x][self.y] == 'g':
-                    print("Green Platypus. Machine terminating")
+                    print("Green Platypus. Machine", self.name, "terminating")
             return False
 
     def move(self, grid):

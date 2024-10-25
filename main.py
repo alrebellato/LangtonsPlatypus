@@ -4,32 +4,10 @@ import pygame
 
 from action import Action
 from machine import Machine
+from machine_builder import MachineBuilder
 from renderer import RGB, Renderer
 
-def random_action():
-    random_colour = random.choice(['y','g'])
-    random_animal = random.choice(['k', 'e', 'w', 'p'])
-    random_tree = random.choice(['gg', 'wa'])
-    return Action(random_colour, random_animal, random_tree)
 
-def random_machine(board_width: int):
-    states = {
-        ('y','k'):random_action(),
-        ('g','k'):random_action(),
-        ('y','e'):random_action(),
-        ('g','e'):random_action(),
-        ('y','w'):random_action(),
-        ('g','w'):random_action(),
-        ('y','p'):random_action(),
-    }
-    
-    print("\nNew Machine___")
-    for state, action in states.items():
-        print('('+state[0]+','+state[1]+','+str(action)+')')
-    print("________________\n")
-
-    random_colour = (random.randint(0, 100), random.randint(0, 100), random.randint(0, 100))
-    return Machine(board_width // 2, board_width // 2, states, random_colour)
 
 def print_help():
     print("\n__________________________________")
@@ -44,7 +22,8 @@ def main():
     parser = argparse.ArgumentParser(description="Langton's Platypus Simulation")
     parser.add_argument('--fps', type=int, default=10, help='Frames per second')
     parser.add_argument('--width', type=int, default=21, help='Canvas width in cells')
-    parser.add_argument('--cell_size', type=int, default=8, help='Cell size in pixels')
+    parser.add_argument('--cell_size', type=int, default=16, help='Cell size in pixels')
+    parser.add_argument('--machines', type=str, default='', help="'.' separated list of platypus machines, eg. 'platypus(1475986,[t(y,k,y,w,gg),t(g,k,y,p,gg),t(y,e,y,e,wa),t(g,e,y,k,gg),t(y,w,y,k,gg),t(g,w,y,w,gg),t(y,p,y,p,wa)]).'")
     args = parser.parse_args()
 
     board_width = args.width
@@ -52,6 +31,7 @@ def main():
     cell_px = args.cell_size
 
     renderer = Renderer(cell_px, board_width)
+    machine_builder = MachineBuilder(board_width)
 
     pygame.init()
     pygame.display.set_caption("Langton's Platypus")
@@ -59,8 +39,8 @@ def main():
     clock = pygame.time.Clock()
 
     grid = [['y' for _ in range(board_width)] for _ in range(board_width)]
-    machines = [random_machine(board_width)]
-
+    machines = [machine_builder.machine_from_string_input(m) for m in args.machines.split('.')]
+    machines = [m for m in machines if m is not False]
     running = True
 
     print_help()
@@ -73,7 +53,7 @@ def main():
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    machines.append(random_machine(board_width))
+                    machines.append(machine_builder.random_machine())
                 elif event.key == pygame.K_c:
                     print("clearing")
                     grid = [['y' for _ in range(board_width)] for _ in range(board_width)]
